@@ -1,25 +1,15 @@
+I finished this project under the supervision of my CS teacher, he probably won't want me leaving his email here but he helped me 
+understand a lot of the complicated concepts executed below. So if you need any explanations feel very free to ask for help as 
+it can look very complicated for somebody at a highschool level (like me).
+
 You can also view the file in the following link: https://1drv.ms/u/s!At89-7AiLz54mWVRNI5Or0bPTkEk?e=tt5Abr
 (For code, PERT:src:com:company)
 (For test file, PERT:src:CS.txt)
 
-A project's activity flow is planned and managed using the project management techniques CPM (Critical Path Method) and PERT (Program Evaluation and Review Technique). 
-These methods entail dividing a project into smaller parts, figuring out how much time and money each work will take, and figuring out how each task is related to the others.
-
-Project activity planning and scheduling is done using CPM. 
+PERT's primary objective is to identify the important activities and resources in a project and to track progress. 
 It entails calculating the time needed to accomplish each job and drawing a network diagram that depicts the dependencies between them. 
-The project's overall completion time is determined by the sequence of tasks known as the critical route, whose completion takes the longest.
-
-Similar to CPM, PERT also uses statistical analysis of the time estimations to take uncertainty into account. 
-In complex projects where the amount of time needed for each activity might vary greatly, PERT is frequently used.
-
-Both CPM and PERT are used to manage projects by identifying the essential activities and resources, tracking the progress, 
-and making necessary adjustments to the plan to finish the project on schedule and within budget. 
-These methods are frequently used by organisations to plan and carry out projects successfully across a variety of industries,
-including manufacturing, construction, and software development.
-
-You can also view the file in the following link: https://1drv.ms/u/s!At89-7AiLz54mWVRNI5Or0bPTkEk?e=tt5Abr
-(For code, PERT:src:com:company)
-(For test file, PERT:src:CS.txt)
+The project's overall completion time is determined by the sequence of tasks known as the critical route, whose completion takes the longest. 
+Project managers can concentrate on the most crucial tasks and allocate resources accordingly by defining the critical path in order to keep the project on schedule. 
 
 A link to a video that can help explain PERT is https://www.youtube.com/watch?v=-TDh-5n90vk&ab_channel=JoshuaEmmanuel
 
@@ -51,6 +41,8 @@ End of Project Flags
 
 task id = PROJECT_END_ID = -42
 task name = PROJECT_END_NAME = "PROJECT END"
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 You can also view the file in the following link: https://1drv.ms/u/s!At89-7AiLz54mWVRNI5Or0bPTkEk?e=tt5Abr
 (For code, PERT:src:com:company)
