@@ -1,0 +1,849 @@
+You can also view the file in the following link: https://1drv.ms/u/s!At89-7AiLz54mWZze6C3_kbY-x2T?e=uI5nce
+
+A project's activity flow is planned and managed using the project management techniques CPM (Critical Path Method) and PERT (Program Evaluation and Review Technique). 
+These methods entail dividing a project into smaller parts, figuring out how much time and money each work will take, and figuring out how each task is related to the others.
+
+Project activity planning and scheduling is done using CPM. 
+It entails calculating the time needed to accomplish each job and drawing a network diagram that depicts the dependencies between them. 
+The project's overall completion time is determined by the sequence of tasks known as the critical route, whose completion takes the longest.
+
+Similar to CPM, PERT also uses statistical analysis of the time estimations to take uncertainty into account. 
+In complex projects where the amount of time needed for each activity might vary greatly, PERT is frequently used.
+
+Both CPM and PERT are used to manage projects by identifying the essential activities and resources, tracking the progress, 
+and making necessary adjustments to the plan to finish the project on schedule and within budget. 
+These methods are frequently used by organisations to plan and carry out projects successfully across a variety of industries,
+including manufacturing, construction, and software development.
+
+You can also view the file in the following link: https://1drv.ms/u/s!At89-7AiLz54mWZze6C3_kbY-x2T?e=uI5nce
+
+A link to a video that can help explain PERT is https://www.youtube.com/watch?v=-TDh-5n90vk&ab_channel=JoshuaEmmanuel
+
+The code below includes data you can read at the end but make sure to follow the format below:
+
+The file format will be as follows:
+
+<task id>, <task name>
+
+<number of predecessors: maximum of 5  ... define a constant MAX_PRED_SUCC>, <predecessor id>, <predecessor id>, <predecessor id>  
+
+<number of successors: maximum of 5 ... define a constant MAX_PRED_SUCC>, <successor id>, <successor id>, <successor id>  
+
+<optimistic time>, <pessimistic time>, <most likely time>
+
+<task id>, <task name>
+
+<number of predecessors: maximum of 5  ... define a constant MAX_PRED_SUCC>, <predecessor id>, <predecessor id>, <predecessor id>  
+
+<number of successors: maximum of ... define a constant MAX_PRED_SUCC>, <successor id>, <successor id>, <successor id>  
+
+<optimistic time>, <pessimistic time>, <most likely time>
+
+... until end of project flags reached
+
+<task id> <task name>
+
+End of Project Flags
+
+task id = PROJECT_END_ID = -42
+task name = PROJECT_END_NAME = "PROJECT END"
+
+
+You can also view the file in the following link: https://1drv.ms/u/s!At89-7AiLz54mWZze6C3_kbY-x2T?e=uI5nce
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+package com.company;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.text.DecimalFormat;
+import java.util.Scanner;
+
+import static java.lang.System.in;
+
+public class Main {
+
+    static Task[] tasks;
+    static Math maths = new Math();
+    static final int ProjEndId = -42;
+    static final String ProjEndName = "PROJECT END";
+    static double MOTHERTIME;
+    static double PROJECTVARIANCE;
+    static double PROJECTDEVIATION;
+    static double ZScore;
+    static double LIKELYHOOD;
+    static int[][] CRITICALPATHS;
+    static int counter;
+    private static final DecimalFormat df = new DecimalFormat("0.00");
+
+    static int COUNTER = 0;
+
+    static String line = "-----------------------------------------------------------------------------------------------";
+
+    public static void variance() {
+        for (Task task : tasks) {
+            task.setVariance((maths.calcVariance(task)));
+
+        }
+    }
+
+    public static void findSlack() {
+        for (int i = 0; i < tasks.length; i++) {
+            tasks[i].setSlack(maths.calcslack(tasks, i));
+        }
+    }
+
+
+    public static void forPass() {
+        for (int j = 0; j < tasks.length; j++) {
+            tasks[j].setEarlyStart(maths.calcEarlyStart(tasks, j));
+            tasks[j].setEarlyFinish(maths.calcEarlyFinish(tasks, j));
+        }
+    }
+
+    public static void bacPass() {
+        for (int i = tasks.length - 1; i >= 0; i--) {
+            tasks[i].setLateFinish(maths.calcLateFinish(tasks, i));
+            tasks[i].setLateStart(maths.findLateStart(tasks, i));
+        }
+    }
+
+
+    public static void pass() throws IOException {
+        forPass();
+        bacPass();
+        findSlack();
+        variance();
+        critPath();
+        for (int g = 0; g < tasks.length; g++) {
+            System.out.println("----------------------------------------------------------------------------------");
+            tasks[g].display();
+            System.out.println("----------------------------------------------------------------------------------");
+        }
+
+        System.out.println();
+        System.out.println("Critical Paths:");
+        for (int[] i : CRITICALPATHS) {
+
+            for (int j : i) {
+                System.out.print("->[" + tasks[j].getName() + "]");
+            }
+            System.out.println();
+        }
+        System.out.println();
+        System.out.println(line);
+        System.out.println("Project Variance: " + PROJECTVARIANCE);
+        System.out.println(line);
+        System.out.println("Project Deviation: " + PROJECTDEVIATION);
+        System.out.println(line);
+        System.out.println("MotherTime: " + MOTHERTIME);
+        System.out.println(line);
+        ZScored();
+        System.out.println("Z SCORE " + ZScore);
+        System.out.println(line);
+        System.out.printf("The probability that you will finish the project before the due date is " +df.format(LIKELYHOOD));
+        System.out.print("%");
+        System.out.println();
+        System.out.println("Good Luck!");
+        System.out.println(line);
+
+    }
+
+    public static void main(String[] args) throws IOException {
+        int TaskCounter = 0;
+        boolean garbage = false;
+        String S = "";
+        while(!garbage) {
+            System.out.println("What is the address of the file you would like to enter(Including all formatting)");
+            Scanner s = new Scanner(in);
+            S = s.next();
+            File F = new File(S);
+            if(F.exists()){
+                break;
+
+            }
+            garbage = false;
+
+        }
+
+        try {
+
+            BufferedReader in = new BufferedReader(new FileReader(S));
+            //src//CS.txt
+            String str;
+
+            while ((str = in.readLine()) != null) {
+                String[] data = str.split(", ");
+                if (Integer.parseInt(data[0]) == ProjEndId && data[1].equals(ProjEndName)) {
+                    break;
+                }
+                TaskCounter++;
+            }
+
+            TaskCounter = (TaskCounter / 4);
+            tasks = new Task[TaskCounter];
+
+            for (int z = 0; z < TaskCounter; z++) {
+                tasks[z] = new Task();
+            }
+            in = new BufferedReader(new FileReader("src//CS.txt"));
+            for (int k = 0; k < TaskCounter; k++) {
+                for (int i = 0; i < 4; i++) {
+                    str = in.readLine();
+                    String[] ar = str.split(", ");
+                    switch (i) {
+                        case 0:
+                            if (Integer.parseInt(ar[0]) == ProjEndId && (ar[1] == ProjEndName)) {
+                                break;
+                            }
+                            tasks[k].setName(ar[1]);
+                            tasks[k].setTaskID(Integer.parseInt(ar[0]));
+                            break;
+                        case 1:
+                            int[] predecessors = new int[Integer.parseInt(ar[0])];
+
+                            for (int r = 1; r < ar.length; r++) {
+                                predecessors[r - 1] = Integer.parseInt(ar[r]);
+                            }
+                            tasks[k].setPredecessors(predecessors);
+                            break;
+                        case 2:
+                            int[] successors = new int[Integer.parseInt(ar[0])];
+                            for (int r = 1; r < ar.length; r++) {
+                                successors[r - 1] = Integer.parseInt(ar[r]);
+                            }
+                            tasks[k].setChildren(successors);
+                            break;
+                        case 3:
+                            tasks[k].setTimes(Double.parseDouble(ar[2]), 0);
+                            tasks[k].setTimes(Double.parseDouble(ar[0]), 1);
+                            tasks[k].setTimes(Double.parseDouble(ar[1]),2);
+                            tasks[k].setEstimatedTime(maths.calcEstTime(tasks[k].getTimes(0), (tasks[k].getTimes(1)), (tasks[k].getTimes(2))));
+                            break;
+                        default:
+                            System.out.println("Default Switch, not working!");
+                            break;
+                    }
+                }
+            }
+
+            pass();
+
+            in.close();
+        } catch (IOException e) {
+            System.out.println("!!File Read Error!!\n" + e);
+
+        }
+
+        double intInput;
+        double taskNum;
+        boolean done;
+
+        //Checkpoint
+//        for(int i = 0; i < tasks.length ; i++){
+//            System.out.println("Times ML:" + i + " " + tasks[i].getTimes(0));
+//            System.out.println("Times P:" + i + " " + tasks[i].getTimes(2));
+//            System.out.println("Times O:" + i + " " + tasks[i].getTimes(1));
+//            System.out.println();
+//
+//        }
+        System.out.println();
+        do {
+            done = true;
+
+            if (input("""
+                    Would you like to edit data?
+                    1 -( Yes
+                    2 -( No""", 3) == 2) {
+                System.out.println("Ok, you will now exit!");
+                System.exit(0);
+            }
+            do {
+                taskNum = input("Enter the ID of the task you would like to change", tasks.length + 1);
+                intInput = input("""
+                        Select which of the following you would like to change
+                        1 -( Optimistic
+                        2 -( Pessimistic
+                        3 -( Most Likely
+                        4 -( Neither""", 5);
+                switch ((int) intInput) {
+                    case 1 -> tasks[(int) taskNum].setTimes((input(
+                            "Please enter the new optimistic time.", 9999)), 1);
+                    case 2 -> tasks[(int) taskNum].setTimes((input(
+                            "Please enter the new pessimistic time.", 9999)), 2);
+                    case 3 -> tasks[(int) taskNum].setTimes((input(
+                            "Please enter the new most likely time.", 9999)), 0);
+                    case 4 -> {
+                        System.out.println("Nothing has been changed as requested! ");
+                        break;
+                    }
+
+
+                }
+                if (input("""
+                    Would you like to edit data?
+                    1 -( Yes
+                    2 -( No""", 3) == 2) {
+                    System.out.println("Ok, you will now exit this feature");
+                    done = true;
+                } else{
+                    done = false;
+                }
+            }while(!done);
+
+        } while (!done);
+
+        for (int k = 0; k < tasks.length; k++) {
+            tasks[k].setEstimatedTime(maths.calcEstTime((tasks[k].getTimes(0)), tasks[k].getTimes(2), tasks[k].getTimes(1)));
+        }
+
+        pass();
+        //Checkpoint
+//        for(int i = 0; i < tasks.length ; i++){
+//            System.out.println("Times ML:" + i + " " + tasks[i].getTimes(0));
+//            System.out.println("Times P:" + i + " " + tasks[i].getTimes(2));
+//            System.out.println("Times O:" + i + " " + tasks[i].getTimes(1));
+//            System.out.println();
+//
+//        }
+
+    }
+
+
+    public static double input(String prompt, int max) {
+        Scanner uIn = new Scanner(in);
+
+        System.out.println(prompt);
+
+        while (true) {
+            if (uIn.hasNextInt()) {
+                int garbage = uIn.nextInt();
+                uIn.nextLine();
+                if (garbage >= 0 && garbage < max) {
+                    return garbage;
+                } else {
+                    System.out.println("The value " + garbage + " is out of range, enter a value in between in between the range of " + 0 + " < value < " + max + " !");
+                }
+
+            } else {
+                String garbage = uIn.next();
+                System.out.println("Improper value (" + garbage + ") entered. Try again.");
+            }
+        }
+    }
+
+    public static void critPath() {
+        MOTHERTIME = 0;
+        PROJECTVARIANCE = 0;
+        int critPaths = 0;
+        int count;
+        counter = 0;
+
+        for (Task task : tasks) { // For each Task.
+            count = 0;
+            if (task.getSlack() == 0 && task.getPredecessors().length == 0) { // If Task has slack==0&&Predecessors().length==0, paths++
+                critPaths++;
+            }
+            if (task.getSlack() == 0) {
+                for (int e : task.getChildren()) {
+                    if (e != ProjEndId && tasks[e].getSlack() == 0) { // If task.getChildren!=end and slack==0 count++
+                        count++;
+                    }
+                }
+            }
+            if (count != 0 && task.getSlack() == 0) { // if count!=0,  critical path * multiplier.
+                critPaths = critPaths * count;
+            }
+
+        }
+
+        CRITICALPATHS = new int[critPaths][tasks.length];
+
+        for (Task task : tasks) {
+            int[] ar = new int[tasks.length];
+            if (task.getPredecessors().length == 0 && task.getSlack() == 0) { // If Task is a starting node and slack 0.
+                ar[0] = task.getTaskID();
+                BRANCH(task, ar, 1);
+            }
+        }
+
+        for (int node : CRITICALPATHS[0]) {
+
+            MOTHERTIME += tasks[node].getEstimatedTime();
+
+            PROJECTVARIANCE += tasks[node].getVariance();
+
+                System.out.println(" Var: " + tasks[node].getVariance());
+
+        }
+
+        PROJECTDEVIATION = java.lang.Math.sqrt(PROJECTVARIANCE);
+    }
+
+    public static void BRANCH(Task task, int[] ar, int pos) {
+        // Create an array called "data" and copy ar into it
+        int[] data = new int[ar.length];
+        System.arraycopy(ar, 0, data, 0, ar.length);
+
+
+        for (int ID : task.getChildren()) {
+
+            // if the ID is == to ProjEndId:
+            if (ID == ProjEndId) {
+                //make array last with a length equal to pos
+                int[] last = new int[pos];
+                // copy data into last
+                System.arraycopy(data, 0, last, 0, pos);
+                // add last to the CRITICALPATHS array and counter++
+                CRITICALPATHS[counter] = last;
+                counter++;
+
+                return;
+            }
+            // if the slack == 0 for int id
+            if (tasks[ID].getSlack() == 0) {
+                //data at pos == ID at pos
+                data[pos] = ID;
+                int num = pos + 1;
+                BRANCH(tasks[ID], data, num);
+            }
+        }
+    }
+
+    public static void ZScored() {
+
+        double eTime = input("Enter the due date for the project:", 9999);
+
+        // Calculate the Z-Score using the calcZScore method and store the result in ZScore
+        ZScore = maths.calcZScore(eTime, MOTHERTIME, PROJECTDEVIATION);
+
+        // initialize the garbage1 variable as a String
+        String garbage1;
+        // if the absolute difference between eTime and MOTHERTIME is less than or equal to 0.001, set garbage1 to "0.00000"
+        if (java.lang.Math.abs(eTime - MOTHERTIME) <= 0.001) {
+            garbage1 = "0.00000";
+        }
+        // otherwise, set garbage1 to the String representation of ZScore
+        else {
+            garbage1 = Double.toString(ZScore);
+        }
+
+        // if eTime is less than the minimum value, set LIKELYHOOD to 0
+        if (eTime >= -4.09 * PROJECTDEVIATION + MOTHERTIME && eTime <= 4.09 * PROJECTDEVIATION + MOTHERTIME) {
+            // if eTime is within the range then find it on z score
+
+            // initialize the end variable as 0
+            int end = 0;
+            // if the first character of garbage1 is '-', set end to 1
+            if (garbage1.charAt(0) == '-') {
+                end = 1;
+            }
+            // substring of garbage1 starting at index end and ending at index 3 + end
+            String garbage2 = garbage1.substring(end, 3 + end);
+            // substring of garbage1 starting at index 3 + end and ending at index 4 + end
+            String garbage3 = garbage1.substring(3 + end, 4 + end);
+            // convert the first substring to a double and multiply it by 10 to find array index
+            int firstIndex = (int) (Double.parseDouble(garbage2) * 10);
+            // convert the second substring to an integer to find array index
+            int secondIndex = Integer.parseInt(garbage3);
+            // look up the value at the specified indices in the ZScoreTable array and make that value LIKELYHOOD
+            LIKELYHOOD = ProjConst.ZScoreTable[firstIndex][secondIndex];
+//             if end is 1 which means ZScore is negative, subtract LIKELYHOOD from 1
+            if (end == 1) {
+                LIKELYHOOD = 1 - LIKELYHOOD;
+            }
+        } else if (eTime < -4.09 * PROJECTDEVIATION + MOTHERTIME) {
+            LIKELYHOOD = 0;
+        } else if (eTime > 4.09 * PROJECTDEVIATION + MOTHERTIME) {
+            LIKELYHOOD = 1;
+        }
+
+
+        // multiply by 100 to get a percentage
+        LIKELYHOOD = LIKELYHOOD * 100;
+
+    }
+
+}
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------
+package com.company;
+
+public class Math {
+
+    //public static Math math;
+    double counter = 0;
+
+
+    public double calcEstTime(double mostLikely, double pessimisticTime, double optimisticTime) {
+        return ((4 * mostLikely + pessimisticTime + optimisticTime) / 6);
+    }
+
+    public double calcEarlyStart(Task[] task, int pos) {
+        double earlyStart = 0;
+        for (int i = 0; i < task[pos].getPredecessors().length; i++) {
+            if (earlyStart < task[task[pos].getPredecessors()[i]].getEarlyFinish()) {
+                earlyStart = task[task[pos].getPredecessors()[i]].getEarlyFinish();
+            }
+        }
+        return earlyStart;
+    }
+
+    public double calcEarlyFinish(Task[] task, int pos) {
+        double earlyFinish;
+        earlyFinish = task[pos].getEarlyStart() + task[pos].getEstimatedTime();
+        return earlyFinish;
+    }
+
+
+    public double calcLateFinish(Task[] task, int pos) {
+        double lateFinish = task[task.length - 1].getEarlyFinish();
+
+        for (int i = 0; i < task[pos].getChildren().length; i++) {
+            if (task[pos].getChildren()[0] == -42) {
+                return lateFinish;
+            }
+
+            if (lateFinish > task[task[pos].getChildren()[i]].getLateStart()) {
+                lateFinish = task[task[pos].getChildren()[i]].getLateStart();
+            }
+        }
+        return lateFinish;
+    }
+
+    public double findLateStart(Task[] task, int pos) {
+        double lateStart;
+        lateStart = task[pos].getLateFinish() - task[pos].getEstimatedTime();
+        if (java.lang.Math.abs(lateStart - task[pos].getEarlyStart()) <= 1e-14) {
+            return task[pos].getEarlyStart();
+        }
+        return lateStart;
+    }
+
+
+    public double calcslack(Task[] task, int pos) {
+
+        double earlyDiff = task[pos].getLateStart() - task[pos].getEarlyStart();
+        double lateDiff = task[pos].getLateFinish() - task[pos].getEarlyFinish();
+        double slack = task[pos].getLateStart() - task[pos].getEarlyStart();
+        if (java.lang.Math.abs(lateDiff - earlyDiff) <= 0.00001) {
+
+            if (java.lang.Math.abs(slack) <= 1e-14) {
+                return 0;
+            }
+            //return (task[pos].getLateStart() - task[pos].getEarlyStart());
+        }
+        return (slack);
+
+    }
+
+    public double calcVariance(Task task) {
+        return ((((task.getTimes(2) - task.getTimes(1)) / 6)) * (task.getTimes(2) - task.getTimes(1)) / 6);
+
+    }
+
+    public double calcZScore(double UI, double EstT, double projectDeviation) {
+        return (UI - EstT) / projectDeviation;
+    }
+
+
+
+
+
+}
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+package com.company;
+
+import java.util.Arrays;
+import java.util.Scanner;
+
+public class Task {
+
+    // FIELDS
+    //==========================================================
+
+    private String Name;
+
+    private double estimatedTime;
+
+    private int[] predecessors;
+
+    private int[] children;
+
+    private final double[] times = new double[3];
+
+    //private double Times;
+
+    private double slack;
+
+    private double Variance;
+
+    private double ProjVariance;
+
+    private double earlyStart;
+
+    private double lateStart;
+
+    private double earlyFinish;
+
+    private double lateFinish;
+
+    private int TaskID;
+
+    // METHODS
+    //==========================================================
+    public void setTaskID(int Taskid) {
+        TaskID = Taskid;
+    }
+    public int getTaskID(){
+        return TaskID;
+    }
+
+    public String[][] monoToBidi(final String[] array, final int rows, final int cols ) {
+        if (array.length != (rows*cols))
+            throw new IllegalArgumentException("Invalid array length");
+
+        String[][] bidi = new String[rows][cols];
+        for ( int i = 0; i < rows; i++ )
+            System.arraycopy(array, (i*cols), bidi[i], 0, cols);
+
+        return bidi;
+    }
+
+    public void setName(String name) {
+        Name = name;
+    }
+
+    public String getName() {
+
+        return Name;
+    }
+
+    public void setEstimatedTime(double estimatedTime) {
+        this.estimatedTime = estimatedTime;
+    }
+
+    public double getEstimatedTime() {
+        return estimatedTime;
+    }
+
+    public void setPredecessors(int[] predecessors) {
+        this.predecessors = predecessors;
+    }
+
+    public int[] getPredecessors() {
+        return predecessors;
+    }
+
+    public void setChildren(int[] children) {
+        this.children = children;
+    }
+
+    public int[] getChildren() {
+
+        return children;
+    }
+
+    public void setTimes(double time, int pos){
+        times[pos] = time;
+    }
+
+    public double getTimes(int pos){
+        return times[pos];
+    }
+
+    public void setSlack(double slack) {
+        this.slack = slack;
+    }
+
+    public double getSlack() {
+        return slack;
+    }
+
+    public void setVariance(double variance) {
+        this.Variance = variance;
+    }
+
+    public double getVariance() {
+        return Variance;
+    }
+
+    public void setProjVariance(double projVariance){
+        this.ProjVariance=ProjVariance;
+    }
+    public double getProjVariance(){
+        return ProjVariance;
+    }
+    public void setEarlyStart(double earlyStart) {
+        this.earlyStart = earlyStart;
+    }
+
+    public double getEarlyStart() {
+        return earlyStart;
+    }
+
+    public void setLateStart(double lateStart) {
+        this.lateStart = lateStart;
+    }
+
+    public double getLateStart() {
+        return lateStart;
+    }
+
+    public void setEarlyFinish(double earlyFinish) {
+        this.earlyFinish = earlyFinish;
+    }
+
+    public double getEarlyFinish() {
+        return earlyFinish;
+    }
+
+    public void setLateFinish(double lateFinish) {
+        this.lateFinish = lateFinish;
+    }
+
+    public double getLateFinish() {
+        return lateFinish;
+    }
+
+
+
+
+    public void display() {
+        System.out.println("Name: " + Name);
+        System.out.println("Task Id: " + TaskID);
+        System.out.println("Estimated Time: " + estimatedTime);
+        System.out.print("Predecessors: ");
+        System.out.println(Arrays.toString(predecessors));
+        System.out.print("Children: ");
+        System.out.println(Arrays.toString(children));
+        System.out.println("Slack: " + slack);
+        System.out.println("Variance: " + Variance);
+        System.out.println("Activity Variance: " + ProjVariance);
+        System.out.println("Early Start: " + earlyStart);
+        System.out.println("Early Finish: " + earlyFinish);
+        System.out.println("Late Start: " + lateStart);
+        System.out.println("Late Finish: " + lateFinish);
+    }
+
+
+
+}
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+package com.company;
+
+import java.util.Scanner;
+
+public class ProjConst {
+    static final double[][] ZScoreTable = {
+            {0.5, 0.49601, 0.49202, 0.48803, 0.48405, 0.48006, 0.47608, 0.4721, 0.46812, 0.46414},
+            {0.53983, 0.5438, 0.54776, 0.55172, 0.55567, 0.55962, 0.5636, 0.56749, 0.57142, 0.57535},
+            {0.57926, 0.58317, 0.58706, 0.59095, 0.59483, 0.59871, 0.60257, 0.60642, 0.61026, 0.61409},
+            {0.61791, 0.62172, 0.62552, 0.6293, 0.63307, 0.63683, 0.64058, 0.64431, 0.64803, 0.65173},
+            {0.65542, 0.6591, 0.66276, 0.6664, 0.67003, 0.67364, 0.67724, 0.68082, 0.68439, 0.68793},
+            {0.69146, 0.69497, 0.69847, 0.70194, 0.7054, 0.70884, 0.71226, 0.71566, 0.71904, 0.7224},
+            {0.72575, 0.72907, 0.73237, 0.73565, 0.73891, 0.74215, 0.74537, 0.74857, 0.75175, 0.7549},
+            {0.75804, 0.76115, 0.76424, 0.7673, 0.77035, 0.77337, 0.77637, 0.77935, 0.7823, 0.78524},
+            {0.78814, 0.79103, 0.79389, 0.79673, 0.79955, 0.80234, 0.80511, 0.80785, 0.81057, 0.81327},
+            {0.81594, 0.81859, 0.82121, 0.82381, 0.82639, 0.82894, 0.83147, 0.83398, 0.83646, 0.83891},
+            {0.84134, 0.84375, 0.84614, 0.84849, 0.85083, 0.85314, 0.85543, 0.85769, 0.85993, 0.86214},
+            {0.86433, 0.8665, 0.86864, 0.87076, 0.87286, 0.87493, 0.87698, 0.879, 0.881, 0.88298},
+            {0.88493, 0.88686, 0.88877, 0.89065, 0.89251, 0.89435, 0.89617, 0.89796, 0.89973, 0.90147},
+            {0.9032, 0.9049, 0.90658, 0.90824, 0.90988, 0.91149, 0.91308, 0.91466, 0.91621, 0.91774},
+            {0.91924, 0.92073, 0.9222, 0.92364, 0.92507, 0.92647, 0.92785, 0.92922, 0.93056, 0.93189},
+            {0.93319, 0.93448, 0.93574, 0.93699, 0.93822, 0.93943, 0.94062, 0.94179, 0.94295, 0.94408},
+            {0.9452, 0.9463, 0.94738, 0.94845, 0.9495, 0.95053, 0.95154, 0.95254, 0.95352, 0.95449},
+            {0.95543, 0.95637, 0.95728, 0.95818, 0.95907, 0.95994, 0.9608, 0.96164, 0.96246, 0.96327},
+            {0.96407, 0.96485, 0.96562, 0.96638, 0.96712, 0.96784, 0.96856, 0.96926, 0.96995, 0.97062},
+            {0.97128, 0.97193, 0.97257, 0.9732, 0.97381, 0.97441, 0.975, 0.97558, 0.97615, 0.9767},
+            {0.97725, 0.97778, 0.97831, 0.97882, 0.97932, 0.97982, 0.9803, 0.98077, 0.98124, 0.98169},
+            {0.98214, 0.98257, 0.983, 0.98341, 0.98382, 0.98422, 0.98461, 0.985, 0.98537, 0.98574},
+            {0.9861, 0.98645, 0.98679, 0.98713, 0.98745, 0.98778, 0.98809, 0.9884, 0.9887, 0.98899},
+            {0.98928, 0.98956, 0.98983, 0.9901, 0.99036, 0.99061, 0.99086, 0.99111, 0.99134, 0.99158},
+            {0.9918, 0.99202, 0.99224, 0.99245, 0.99266, 0.99286, 0.99305, 0.99324, 0.99343, 0.99361},
+            {0.99379, 0.99396, 0.99413, 0.9943, 0.99446, 0.99461, 0.99477, 0.99492, 0.99506, 0.9952},
+            {0.99534, 0.99547, 0.9956, 0.99573, 0.99585, 0.99598, 0.99609, 0.99621, 0.99632, 0.99643},
+            {0.99653, 0.99664, 0.99674, 0.99683, 0.99693, 0.99702, 0.99711, 0.9972, 0.99728, 0.99736},
+            {0.99744, 0.99752, 0.9976, 0.99767, 0.99774, 0.99781, 0.99788, 0.99795, 0.99801, 0.99807},
+            {0.99813, 0.99819, 0.99825, 0.99831, 0.99836, 0.99841, 0.99846, 0.99851, 0.99856, 0.99861},
+            {0.99865, 0.99869, 0.99874, 0.99878, 0.99882, 0.99886, 0.99889, 0.99893, 0.99896, 0.999},
+            {0.99903, 0.99906, 0.9991, 0.99913, 0.99916, 0.99918, 0.99921, 0.99924, 0.99926, 0.99929},
+            {0.99931, 0.99934, 0.99936, 0.99938, 0.9994, 0.99942, 0.99944, 0.99946, 0.99948, 0.9995},
+            {0.99952, 0.99953, 0.99955, 0.99957, 0.99958, 0.9996, 0.99961, 0.99962, 0.99964, 0.99965},
+            {0.99966, 0.99968, 0.99969, 0.9997, 0.99971, 0.99972, 0.99973, 0.99974, 0.99975, 0.99976},
+            {0.99977, 0.99978, 0.99978, 0.99979, 0.9998, 0.99981, 0.99981, 0.99982, 0.99983, 0.99983},
+            {0.99984, 0.99985, 0.99985, 0.99986, 0.99986, 0.99987, 0.99987, 0.99988, 0.99988, 0.99989},
+            {0.99989, 0.9999, 0.9999, 0.9999, 0.99991, 0.99991, 0.99992, 0.99992, 0.99992, 0.99992},
+            {0.99993, 0.99993, 0.99993, 0.99994, 0.99994, 0.99994, 0.99994, 0.99995, 0.99995, 0.99995},
+            {0.99995, 0.99995, 0.99996, 0.99996, 0.99996, 0.99996, 0.99996, 0.99996, 0.99997, 0.99997},
+            {0.99997, 0.99997, 0.99997, 0.99997, 0.99997, 0.99997, 0.99998, 0.99998, 0.99998, 0.99998}
+    };
+    private ProjConst() {
+        throw new AssertionError();
+    }
+}
+---------------------------------------------------------------------------------------------------------------------------------------------------------------
+This is some data you can feed it to carry out the code. This is the only format you can follow due to the nature of the program reading.
+0, A
+0
+2, 2, 3
+6, 10, 7
+1, B
+0
+1, 3
+4, 11, 6
+2, C
+1, 0
+2, 4, 5
+9, 13, 12
+3, D
+2, 0, 1
+2, 5, 6
+6, 16, 12
+4, E
+1, 2
+2, 7, 10
+7, 11, 8
+5, F
+2, 2, 3
+1, 7
+9, 16, 11
+6, G
+1, 3
+2, 8, 9
+7, 11, 10
+7, H
+2, 4, 5
+2, 8, 9
+4, 11, 9
+8, I
+2, 6, 7
+2, 10, 11
+6, 12, 7
+9, J
+2, 6, 7
+1, 11
+2, 28, 4
+10, K
+2, 4, 8
+1, 12
+1, 5, 4
+11, L
+2, 8, 9
+1, 12
+5, 12, 10
+12, M
+2, 10, 11
+1, 13
+1, 12, 9
+13, N
+1, 12
+1, -42
+4, 11, 6
+-42, PROJECT END
+1, 13
+0
+0, 0, 0
